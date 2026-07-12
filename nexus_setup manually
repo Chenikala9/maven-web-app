@@ -1,0 +1,144 @@
+nexus setup 
+1. Nexus Installation (Amazon Linux 2023)
+sudo useradd nexus
+
+cd /opt
+
+sudo wget https://cdn.download.sonatype.com/repository/downloads-prod-group/3/nexus-3.93.1-04-linux-x86_64.tar.gz
+
+sudo tar -xzf nexus-3.93.1-04-linux-x86_64.tar.gz
+
+sudo mv nexus-3.93.1-04 nexus
+
+sudo chown -R nexus:nexus /opt/nexus
+2. Configure Nexus user
+sudo vi /opt/nexus/bin/nexus.rc
+
+Add:
+
+run_as_user="nexus"
+3. Create Nexus service
+sudo vi /etc/systemd/system/nexus.service
+
+Content:
+
+[Unit]
+Description=Nexus Repository Manager
+After=network.target
+
+[Service]
+Type=simple
+User=nexus
+Group=nexus
+LimitNOFILE=65536
+ExecStart=/opt/nexus/bin/nexus run
+ExecStop=/bin/kill -15 $MAINPID
+Restart=on-failure
+TimeoutSec=600
+
+[Install]
+WantedBy=multi-user.target
+4. Start Nexus
+sudo systemctl daemon-reload
+
+sudo systemctl enable nexus
+
+sudo systemctl start nexus
+
+sudo systemctl status nexus
+
+Check:
+
+curl http://localhost:8081
+5. First login
+
+Browser:
+
+http://SERVER-IP:8081
+
+Username:
+
+admin
+
+Initial password:
+
+cat /opt/sonatype-work/nexus3/admin.password
+
+First login తర్వాత కొత్త password set చేయండి.
+
+6. Create Maven Repository
+
+Nexus UI:
+
+Administration
+    ↓
+Repositories
+    ↓
+Create repository
+    ↓
+maven2 (hosted)
+
+Name:
+
+maven-release
+
+Deployment policy:
+
+Allow redeploy
+
+Create.
+
+7. Jenkins Agent Maven settings
+
+Jenkins user:
+
+sudo su - jenkins
+
+mkdir -p ~/.m2
+
+vi ~/.m2/settings.xml
+
+Add:
+
+<settings>
+    <servers>
+        <server>
+            <id>nexus</id>
+            <username>admin</username>
+            <password>YourPassword</password>
+        </server>
+    </servers>
+</settings>
+8. Jenkins Pipeline Flow
+GitHub
+   |
+   v
+Jenkins Controller
+   |
+   v
+Agent
+   |
+   +-- Git checkout
+   |
+   +-- Maven build
+   |
+   +-- WAR
+   |
+   +-- Nexus upload
+
+ఈరోజు మీరు నేర్చుకున్న important real-time points:
+
+✅ Jenkins Controller vs Agent
+✅ SSH key authentication
+✅ Jenkins user setup
+✅ Nexus installation
+✅ Nexus repository creation
+✅ Maven deploy plugin
+✅ settings.xml usage
+✅ WAR artifact management
+
+రేపు practice చేసేటప్పుడు మొదటి నుంచి మీరే setup చేయడానికి ప్రయత్నించండి. మధ్యలో error వస్తే logs చూస్తూ troubleshoot చేయడం నేర్చుకుంటే DevOps లో చాలా strong అవుతారు. 👍
+
+Next step గా మీరు practice తర్వాత:
+
+Jenkins + SonarQube + Nexus + Docker + Kubernetes complete CI/CD pipeline చేయవచ్చు.
