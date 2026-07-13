@@ -15,12 +15,7 @@
       <version>3.8.1</version>
     </dependency>
   </dependencies>
-  <distributionManagement>
-    <repository>
-        <id>nexus</id>
-        <url>http://15.206.164.145:8081/repository/maven-release/</url>
-    </repository>
-</distributionManagement>
+
   <build>
     <finalName>01-maven-web-app</finalName>
     <plugins>
