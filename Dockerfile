@@ -4,7 +4,7 @@ FROM tomcat:9.0-jdk17-temurin
 RUN rm -rf /usr/local/tomcat/webapps/*
 
 # Copy WAR file
-COPY target/01-maven-web-app.war /usr/local/tomcat/webapps/ROOT.war
+COPY target/*.war /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
 
