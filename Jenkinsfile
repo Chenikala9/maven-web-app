@@ -1,41 +1,68 @@
 pipeline {
-    agent {
-        label 'gova'
-    }
+    agent any
 
-    tools {
-        git 'git3'
-        maven 'maven3'
+    parameters {
+        string(name: 'DOCKERHUB_USERNAME', defaultValue: '', description: 'Docker Hub Username')
+        string(name: 'IMAGE_NAME', defaultValue: '01-maven-web-app', description: 'Docker Image Name')
+        string(name: 'IMAGE_TAG', defaultValue: 'v1', description: 'Docker Image Tag')
     }
 
     stages {
-        stage('Checkout') {
+
+        stage('Git Checkout') {
             steps {
                 git branch: 'master',
                     url: 'https://github.com/Chenikala9/maven-web-app.git'
             }
         }
 
-        stage('Build') {
+        stage('Maven Build') {
             steps {
                 sh 'mvn clean package'
             }
         }
 
-        stage('Archive Artifact') {
+        stage('Docker Build') {
             steps {
-                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+                sh "docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} ."
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Tag') {
+            steps {
+                sh """
+                docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} \
+                ${params.DOCKERHUB_USERNAME}/${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                """
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh """
+                docker push ${params.DOCKERHUB_USERNAME}/${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                """
             }
         }
     }
 
     post {
-        success {
-            echo 'Build completed successfully.'
-        }
-
-        failure {
-            echo 'Build failed.'
+        always {
+            sh 'docker logout'
         }
     }
 }
